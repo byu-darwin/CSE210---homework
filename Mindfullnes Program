@@ -1,0 +1,407 @@
+from mimetypes import init
+import time
+import random
+
+
+class Activity:
+    """Base class containing behavior shared by all mindfulness activities."""
+
+    def __init__(self, name, description):
+        self._name = name
+        self._description = description
+        self._duration = 0
+
+    @property
+    def name(self):
+        return self._name
+
+    @property
+    def duration(self):
+        return self._duration
+
+    def start(self):
+        """Display the common starting message and get the duration."""
+
+        print(f"\nStarting {self._name}")
+        print()
+        print(self._description)
+        print()
+
+        while True:
+            try:
+                duration = int(
+                    input("How long, in seconds, would you like for your session? ")
+                )
+
+                if duration > 0:
+                    self._duration = duration
+                    break
+
+                print("Please enter a positive number.")
+
+            except ValueError:
+                print("Please enter a valid number.")
+
+        print("\nGet ready...")
+        self.countdown(3)
+
+    def finish(self):
+        """Display the common ending message."""
+
+        print("\nGood job!")
+        self.countdown(2)
+
+        print(
+            f"\nYou have completed the {self._name} "
+            f"for {self._duration} seconds."
+        )
+
+        self.countdown(3)
+
+    @staticmethod
+    def countdown(seconds):
+        """Display a countdown animation."""
+
+        for i in range(seconds, 0, -1):
+            print(f"\r{i}   ", end="", flush=True)
+            time.sleep(1)
+
+        print("\r     ")
+
+    @staticmethod
+    def spinner(seconds):
+        """Display a spinner animation while pausing."""
+
+        symbols = ["|", "/", "-", "\\"]
+        end_time = time.time() + seconds
+        index = 0
+
+        while time.time() < end_time:
+            print(
+                f"\r{symbols[index % len(symbols)]}",
+                end="",
+                flush=True
+            )
+
+            index += 1
+            time.sleep(0.25)
+
+        print("\r ", end="", flush=True)
+        print()
+
+    def run(self):
+        """Implemented by each child activity."""
+
+        raise NotImplementedError
+
+
+class BreathingActivity(Activity):
+    """Activity that guides the user through slow breathing."""
+
+    def __init__(self):
+        super().__init__(
+            "Breathing Activity",
+            "This activity will help you relax by walking you through "
+            "breathing in and out slowly. Clear your mind and focus "
+            "on your breathing."
+        )
+
+    def run(self):
+        self.start()
+
+        end_time = time.time() + self.duration
+        breathe_in = True
+
+        while time.time() < end_time:
+            if breathe_in:
+                print("\nBreathe in...")
+            else:
+                print("\nBreathe out...")
+
+            # Four-second breathing cycle with countdown.
+            for number in range(4, 0, -1):
+                if time.time() >= end_time:
+                    break
+
+                print(f"\r{number}   ", end="", flush=True)
+                time.sleep(1)
+
+            print()
+            breathe_in = not breathe_in
+
+        self.finish()
+
+
+class ReflectionActivity(Activity):
+    """Activity that helps the user reflect on meaningful experiences."""
+
+    def __init__(self):
+        super().__init__(
+            "Reflection Activity",
+            "This activity will help you reflect on times in your life "
+            "when you have shown strength and resilience. This will help "
+            "you recognize the power you have and how you can use it "
+            "in other aspects of your life."
+        )
+
+        self._prompts = [
+            "Think of a time when you stood up for someone else.",
+            "Think of a time when you did something really difficult.",
+            "Think of a time when you helped someone in need.",
+            "Think of a time when you did something truly selfless."
+        ]
+
+        self._questions = [
+            "Why was this experience meaningful to you?",
+            "Have you ever done anything like this before?",
+            "How did you get started?",
+            "How did you feel when it was complete?",
+            "What made this time different than other times when "
+            "you were not as successful?",
+            "What is your favorite thing about this experience?",
+            "What could you learn from this experience that applies "
+            "to other situations?",
+            "What did you learn about yourself through this experience?",
+            "How can you keep this experience in mind in the future?"
+        ]
+
+    def run(self):
+        self.start()
+
+        prompt = random.choice(self._prompts)
+
+        print("\nConsider the following prompt:")
+        print()
+        print(f"--- {prompt} ---")
+        print()
+
+        print("When you are ready, begin reflecting.")
+        self.spinner(5)
+
+        end_time = time.time() + self.duration
+
+        # Make a copy so questions do not repeat until all have been used.
+        unused_questions = self._questions.copy()
+
+        while time.time() < end_time:
+
+            if not unused_questions:
+                unused_questions = self._questions.copy()
+
+            question = random.choice(unused_questions)
+            unused_questions.remove(question)
+
+            print()
+            print(question)
+
+            remaining = int(end_time - time.time())
+
+            if remaining <= 0:
+                break
+
+            pause_time = min(6, max(1, remaining))
+            self.spinner(pause_time)
+
+        self.finish()
+
+
+class ListingActivity(Activity):
+    """Activity where the user lists things related to a prompt."""
+
+    def __init__(self):
+        super().__init__(
+            "Listing Activity",
+            "This activity will help you reflect on the good things "
+            "in your life by having you list as many things as you "
+            "can in a certain area."
+        )
+
+        self._prompts = [
+            "Who are people that you appreciate?",
+            "What are personal strengths of yours?",
+            "Who are people that you have helped this week?",
+            "When have you felt the Holy Ghost this month?",
+            "Who are some of your personal heroes?"
+        ]
+
+    def run(self):
+        self.start()
+
+        prompt = random.choice(self._prompts)
+
+        print("\nConsider the following prompt:")
+        print()
+        print(f"--- {prompt} ---")
+        print()
+
+        print("You will have a few seconds to think.")
+        self.countdown(5)
+
+        print("\nBegin listing items.")
+        print("Press ENTER after each item.")
+        print()
+
+        end_time = time.time() + self.duration
+        count = 0
+
+        while time.time() < end_time:
+            remaining = int(end_time - time.time())
+
+            if remaining <= 0:
+                break
+
+            print(
+                f"Item {count + 1} "
+                f"({remaining}s remaining): ",
+                end="",
+                flush=True
+            )
+
+            item = input()
+
+            # Check whether time ran out while the user was typing.
+            if time.time() >= end_time:
+                break
+
+            if item.strip():
+                count += 1
+
+        print(f"\nYou listed {count} item(s)!")
+
+        self.finish()
+
+
+class GratitudeActivity(Activity):
+    """Extra activity added to exceed the core requirements."""
+
+    def __init__(self):
+        super().__init__(
+            "Gratitude Activity",
+            "This activity will help you focus your attention on the "
+            "good things in your life. You will consider something "
+            "you are grateful for and take time to appreciate why "
+            "it matters to you."
+        )
+
+        self._prompts = [
+            "Think about a person you are grateful to have in your life.",
+            "Think about a difficult experience that taught you something valuable.",
+            "Think about a small thing that made you happy recently.",
+            "Think about a place where you feel peaceful.",
+            "Think about something you have that you often take for granted."
+        ]
+
+    def run(self):
+        self.start()
+
+        prompt = random.choice(self._prompts)
+
+        print()
+        print(prompt)
+        print()
+
+        print("Take a moment to think about this.")
+        self.spinner(5)
+
+        end_time = time.time() + self.duration
+
+        while time.time() < end_time:
+            print("\nWhat makes this meaningful to you?")
+
+            remaining = int(end_time - time.time())
+
+            if remaining <= 0:
+                break
+
+            self.spinner(min(6, max(1, remaining)))
+
+        self.finish()
+
+
+class ActivityManager:
+    """Manages activities and keeps session statistics."""
+
+    def __init__(self):
+        self._activity_counts = {}
+
+    def start_activity(self, activity):
+        """Run an activity and record that it was completed."""
+
+        activity.run()
+
+        if activity.name in self._activity_counts:
+            self._activity_counts[activity.name] += 1
+        else:
+            self._activity_counts[activity.name] = 1
+
+    def show_statistics(self):
+        """Display activity statistics for the current session."""
+
+        print("\nSession Statistics")
+        print("------------------")
+
+        if not self._activity_counts:
+            print("No activities have been completed yet.")
+        else:
+            for name, count in self._activity_counts.items():
+                print(f"{name}: {count} time(s)")
+
+        input("\nPress ENTER to return to the menu.")
+
+
+def main():
+    # Creativity / exceeding requirements:
+    # In addition to the required Reflection, Breathing, and Listing
+    # activities, this program adds a Gratitude Activity.
+    #
+    # The program also keeps session statistics showing how many times
+    # each activity has been completed.
+    #
+    # Reflection questions are randomly selected without repeating
+    # until all questions have been used during that activity session.
+
+    manager = ActivityManager()
+
+    running = True
+
+    while running:
+        print("\n" + "=" * 45)
+        print("        MINDFULNESS PROGRAM")
+        print("=" * 45)
+
+        print("\nMenu Options:")
+        print("  1. Start breathing activity")
+        print("  2. Start reflection activity")
+        print("  3. Start listing activity")
+        print("  4. Start gratitude activity")
+        print("  5. View session statistics")
+        print("  6. Quit")
+
+        choice = input("\nSelect a choice from the menu: ")
+
+        if choice == "1":
+            manager.start_activity(BreathingActivity())
+
+        elif choice == "2":
+            manager.start_activity(ReflectionActivity())
+
+        elif choice == "3":
+            manager.start_activity(ListingActivity())
+
+        elif choice == "4":
+            manager.start_activity(GratitudeActivity())
+
+        elif choice == "5":
+            manager.show_statistics()
+
+        elif choice == "6":
+            running = False
+            print("\nThank you for using the Mindfulness Program!")
+
+        else:
+            print("\nInvalid choice. Please select a number from 1-6.")
+            Activity.countdown(2)
+
+
+if __name__ == "__main__":
+    main()
